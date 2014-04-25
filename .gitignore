@@ -4,6 +4,7 @@
 *.iws
 
 # Gradle
+.gradle/
 gradle.properties
 
 # Project files
