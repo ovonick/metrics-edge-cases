@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -12,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * ovonick
+ *
  * Created by ovonick on 4/15/2014.
  *
  */
@@ -22,26 +21,21 @@ public class MetricsEdgeCases {
     private static final MetricRegistry REGISTRY               = new MetricRegistry();
     private static final Lock           LOCK                   = new Lock();
     private static final int            MAX_DATA_POINTS_COUNT  = 10000;
-    private static final int            SCENARIO_RUNTIME_HOURS = 2;
+    private static final int            SCENARIO_RUNTIME_HOURS = 3;
     private static       long[]         realValuesTimeFrame;
     private static       int            timeFrameCounter;
     private static       String         scenarioName;
 
 
     public static void main(String... args) throws InterruptedException {
+        final String scenarioCommandLineParameter = args == null || args.length < 1 ? null : args[0];
+
         startReporter();
-        reportRunningThreads();
-        runScenario("scenario1", 20, new Scenario1Emulator());
-        reportRunningThreads();
-        runScenario("scenario2", 30, new Scenario2Emulator());
-        reportRunningThreads();
-    }
-
-    private static void reportRunningThreads() {
-        Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-
-        for(Thread thread : stackTraces.keySet()) {
-            LOG.info(thread.getName());
+        if (scenarioCommandLineParameter == null || "1".contains(scenarioCommandLineParameter)) {
+            runScenario("scenario1", 20, new Scenario1Emulator());
+        }
+        if (scenarioCommandLineParameter == null || "2".contains(scenarioCommandLineParameter)) {
+            runScenario("scenario2", 30, new Scenario2Emulator());
         }
     }
 
@@ -60,9 +54,7 @@ public class MetricsEdgeCases {
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
         executorService.scheduleAtFixedRate(scenarioEmulator, 0, runPeriodicityMinutes, TimeUnit.MINUTES);
 
-        LOG.info("Running {}", scenarioName);
-
-        sleep(TimeUnit.MINUTES.toMillis(SCENARIO_RUNTIME_HOURS));
+        sleep(TimeUnit.HOURS.toMillis(SCENARIO_RUNTIME_HOURS));
         executorService.shutdown();
         executorService.awaitTermination(runPeriodicityMinutes, TimeUnit.MINUTES);
     }
