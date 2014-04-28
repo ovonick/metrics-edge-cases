@@ -1,5 +1,6 @@
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import org.omg.CORBA.TIMEOUT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,38 +18,50 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class MetricsEdgeCases {
 
-    private static final Logger         LOG                    = LoggerFactory.getLogger(MetricsEdgeCases.class);
-    private static final MetricRegistry REGISTRY               = new MetricRegistry();
-    private static final Lock           LOCK                   = new Lock();
-    private static final int            MAX_DATA_POINTS_COUNT  = 10000;
-    private static final int            SCENARIO_RUNTIME_HOURS = 3;
-    private static       long[]         realValuesTimeFrame;
-    private static       int            timeFrameCounter;
-    private static       String         scenarioName;
+    private static final Logger                   LOG                       = LoggerFactory.getLogger(MetricsEdgeCases.class);
+    private static final MetricRegistry           REGISTRY                  = new MetricRegistry();
+    private static final Lock                     LOCK                      = new Lock();
+    private static final int                      MAX_DATA_POINTS_COUNT     = 10000;
+    private static final int                      SCENARIO_RUNTIME_HOURS    = 3;
+    private static final ScheduledExecutorService REPORTER_EXECUTOR_SERVICE = Executors.newScheduledThreadPool(1);
+    private static       long[]                   realValuesTimeFrame;
+    private static       int                      timeFrameCounter;
+    private static       String                   scenarioName;
+    private static       int                      scenarioScale;
 
 
     public static void main(String... args) throws InterruptedException {
         final String scenarioCommandLineParameter = args == null || args.length < 1 ? null : args[0];
 
         startReporter();
+
         if (scenarioCommandLineParameter == null || "1".contains(scenarioCommandLineParameter)) {
-            runScenario("scenario1", 20, new Scenario1Emulator());
+            runScenario("scenario1", 20, 1000000, new Scenario1Emulator());
         }
         if (scenarioCommandLineParameter == null || "2".contains(scenarioCommandLineParameter)) {
-            runScenario("scenario2", 30, new Scenario2Emulator());
+            runScenario("scenario2", 30, 1000000, new Scenario2Emulator());
         }
+        if (scenarioCommandLineParameter == null || "3".contains(scenarioCommandLineParameter)) {
+            runScenario("scenario3", 1, 1, new Scenario3Emulator());
+        }
+
+        stopReporter();
+    }
+
+    private static void stopReporter() {
+        REPORTER_EXECUTOR_SERVICE.shutdown();
     }
 
     private static void startReporter() {
-        ScheduledExecutorService reporterExecutorService = Executors.newScheduledThreadPool(1);
-        reporterExecutorService.scheduleAtFixedRate(new Reporter(), 1, 1, TimeUnit.MINUTES);
+        REPORTER_EXECUTOR_SERVICE.scheduleAtFixedRate(new Reporter(), 1, 1, TimeUnit.MINUTES);
     }
 
-    private static void runScenario(String scenarioName, int runPeriodicityMinutes, Runnable scenarioEmulator) throws InterruptedException {
+    private static void runScenario(String scenarioName, int runPeriodicityMinutes, int scenarioScale, Runnable scenarioEmulator) throws InterruptedException {
         initializeRealValuesTimeFrame();
 
         try(Lock ignored = LOCK.lock()) {
-            MetricsEdgeCases.scenarioName = scenarioName;
+            MetricsEdgeCases.scenarioName  = scenarioName;
+            MetricsEdgeCases.scenarioScale = scenarioScale;
         }
 
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
@@ -79,7 +92,7 @@ public class MetricsEdgeCases {
             int   totalCount   = 0;
             long  executionTime;
 
-            while (totalCount < getMaxIterationCount()) { //500
+            while (totalCount < getMaxIterationCount()) {
 
                 // just a random execution time
                 executionTime = getExecutionTime(totalCount);
@@ -128,6 +141,35 @@ public class MetricsEdgeCases {
         }
     }
 
+    private static class Scenario3Emulator implements Runnable {
+
+        @Override
+        public void run() {
+            Timer metricsTimer = REGISTRY.timer(scenarioName);
+            int   totalCount   = 0;
+            long  executionTime;
+
+            while (totalCount < PrecalculatedWeibull05DistributionSample.sample.length) {
+
+                // just a random execution time
+                executionTime = PrecalculatedWeibull05DistributionSample.sample[totalCount];
+
+                // record execution time using metrics timer
+                metricsTimer.update(executionTime, TimeUnit.NANOSECONDS);
+
+                // in parallel we record execution time value in simple array so we can compare it to timer
+                try(Lock ignored = LOCK.lock()) {
+                    realValuesTimeFrame[timeFrameCounter] = executionTime;
+                }
+
+                sleep(5);
+
+                timeFrameCounter++;
+                totalCount++;
+            }
+        }
+    }
+
     private static class Reporter implements Runnable {
         @Override
 
@@ -146,8 +188,8 @@ public class MetricsEdgeCases {
                 long timestamp = System.currentTimeMillis() / 1000; // graphite format without milliseconds
                 LOG.info("test.ovonick.metricsedgecases.{}.real.count {} {}",           scenarioName, timeFrameCounter, timestamp);
                 LOG.info("test.ovonick.metricsedgecases.{}.real.{}percentile {} {}",    scenarioName, (int) (percentile * 100), realPercentile, timestamp);
-                LOG.info("test.ovonick.metricsedgecases.{}.metrics.{}percentile {} {}", scenarioName, (int) (percentile * 100), (int) timer.getSnapshot().getValue(percentile) / 1000000, timestamp); // since timer returns nanoseconds we scale it to milliseconds
                 LOG.info("test.ovonick.metricsedgecases.{}.metrics.count {} {}",        scenarioName, (int) (timer.getOneMinuteRate() * 60), timestamp); // timer always returns rate per second. Since we comparing rate per minute we multiply that by 60
+                LOG.info("test.ovonick.metricsedgecases.{}.metrics.{}percentile {} {}", scenarioName, (int) (percentile * 100), (int) timer.getSnapshot().getValue(percentile) / scenarioScale, timestamp); // since timer returns nanoseconds we scale it to milliseconds for scenarios 1 and 2
                 MetricsEdgeCases.initializeRealValuesTimeFrame();
             }
         }
