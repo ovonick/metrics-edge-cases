@@ -162,7 +162,7 @@ public class MetricsEdgeCases {
                     realValuesTimeFrame[timeFrameCounter] = executionTime;
                 }
 
-                sleep(5);
+                //sleep(10);
 
                 timeFrameCounter++;
                 totalCount++;
@@ -188,7 +188,8 @@ public class MetricsEdgeCases {
                 long timestamp = System.currentTimeMillis() / 1000; // graphite format without milliseconds
                 LOG.info("test.ovonick.metricsedgecases.{}.real.count {} {}",           scenarioName, timeFrameCounter, timestamp);
                 LOG.info("test.ovonick.metricsedgecases.{}.real.{}percentile {} {}",    scenarioName, (int) (percentile * 100), realPercentile, timestamp);
-                LOG.info("test.ovonick.metricsedgecases.{}.metrics.count {} {}",        scenarioName, (int) (timer.getOneMinuteRate() * 60), timestamp); // timer always returns rate per second. Since we comparing rate per minute we multiply that by 60
+                LOG.info("test.ovonick.metricsedgecases.{}.metrics.count {} {}",        scenarioName, (int) (timer.getCount()), timestamp);
+                LOG.info("test.ovonick.metricsedgecases.{}.metrics.oneminuterate {} {}",scenarioName, (int) (timer.getOneMinuteRate() * 60), timestamp); // timer always returns rate per second. Since we comparing rate per minute we multiply that by 60 which is not correct and thus to show that this is not the right way to get count per minute.
                 LOG.info("test.ovonick.metricsedgecases.{}.metrics.{}percentile {} {}", scenarioName, (int) (percentile * 100), (int) timer.getSnapshot().getValue(percentile) / scenarioScale, timestamp); // since timer returns nanoseconds we scale it to milliseconds for scenarios 1 and 2
                 MetricsEdgeCases.initializeRealValuesTimeFrame();
             }
