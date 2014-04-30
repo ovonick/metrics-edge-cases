@@ -21,7 +21,10 @@ There is a process that starts every 20 minutes and runs for 5-10 minutes. It pe
 is recorded by Timer metric.
 
 ### Charts
-![Response times are reported even when there is no activity](output/images/scenario1-count.png "Response times are reported even when there is no activity")
+Response times are reported even when there is no activity
+
+![scenario1-count.png](output/images/scenario1-count.png)
+
 
 ## Scenario 2
 
@@ -36,11 +39,15 @@ and is sustained on this level for the next 10 minutes. 95th percentile reported
 response time and keeps reporting 30ms through out the entire lifetime of the process.
 
 ### Charts
-![Timer missed spike in response time](output/images/scenario2-95thpercentile.png "Timer missed spike in response time")
+Timer missed spike in response time
 
 Chart has logarithmic scale and that's why all zero values were replaced with 0.5. In other words 0.5 really means zero.
 
-![Timer.getOneMinuteRate() fades slowly which may be confusing](output/images/scenario2-count.png "Timer.getOneMinuteRate() fades slowly which may be confusing")
+![scenario2-95thpercentile.png](output/images/scenario2-95thpercentile.png)
+
+Timer.getOneMinuteRate() fades slowly which may be confusing
+
+![scenario2-count.png](output/images/scenario2-count.png)
 
 ##Scenario 3
 
@@ -59,10 +66,15 @@ for 95th percentile was observed on the sample set of values. Even greater error
 There is a precalculated set of 5000 values. They are being recorded as "timer" values. This process repeats every minute.
 
 ### Charts
-![Timer.getOneMinuteRate() is not the same as count per minute](output/images/scenario3-count.png "Timer.getOneMinuteRate() is not the same as count per minute")
+Timer.getOneMinuteRate() is not the same as count per minute
+This initial spike to ~33000 a minute rate (went through the roof) makes little sense either. Metrics count matches real count though!
 
-This initial spike to ~33000 a minute rate (went through the roof) makes little sense either.
+![scenario3-count.png](output/images/scenario3-count.png)
 
-![Reservoir sampling response time vs real response time](output/images/scenario3-95thpercentile.png "Reservoir sampling response time vs real response time")
+Reservoir sampling response time vs real response time
 
-![Reservoir sampling can be quite inaccurate. Up to 25% error margin on 95th percentile](output/images/scenario3-error-95thpercentile.png "Reservoir sampling can be quite inaccurate. Up to 25% error margin on 95th percentile")
+![scenario3-95thpercentile.png](output/images/scenario3-95thpercentile.png)
+
+Reservoir sampling can be quite inaccurate. Up to 25% error margin on 95th percentile
+
+![scenario3-error-95thpercentile.png](output/images/scenario3-error-95thpercentile.png)
