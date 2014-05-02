@@ -174,23 +174,31 @@ public class MetricsEdgeCases {
         @Override
 
         public void run() {
-            final double percentile = 0.95;
+            final double percentile95  = 0.95;
+            final double percentile99  = 0.99;
+            final double percentile999 = 0.999;
 
             try(Lock ignored = LOCK.lock()) {
-                // getting real percentile value
+                // getting real percentile95 value
                 long[] realValuesReporting = new long[timeFrameCounter];
                 System.arraycopy(realValuesTimeFrame, 0, realValuesReporting, 0, timeFrameCounter);
                 Arrays.sort(realValuesReporting);
-                long realPercentile = timeFrameCounter == 0 ? 0 : realValuesReporting[(int)(realValuesReporting.length * percentile)];
+                long realPercentile95  = timeFrameCounter == 0 ? 0 : realValuesReporting[(int)(realValuesReporting.length * percentile95)];
+                long realPercentile99  = timeFrameCounter == 0 ? 0 : realValuesReporting[(int)(realValuesReporting.length * percentile99)];
+                long realPercentile999 = timeFrameCounter == 0 ? 0 : realValuesReporting[(int)(realValuesReporting.length * percentile999)];
 
                 Timer timer = REGISTRY.timer(scenarioName);
 
                 long timestamp = System.currentTimeMillis() / 1000; // graphite format without milliseconds
                 LOG.info("test.ovonick.metricsedgecases.{}.real.count {} {}",           scenarioName, timeFrameCounter, timestamp);
-                LOG.info("test.ovonick.metricsedgecases.{}.real.{}percentile {} {}",    scenarioName, (int) (percentile * 100), realPercentile, timestamp);
+                LOG.info("test.ovonick.metricsedgecases.{}.real.{}percentile {} {}",    scenarioName, (int) (percentile95  * 100),  realPercentile95,  timestamp);
+                LOG.info("test.ovonick.metricsedgecases.{}.real.{}percentile {} {}",    scenarioName, (int) (percentile99  * 100),  realPercentile99,  timestamp);
+                LOG.info("test.ovonick.metricsedgecases.{}.real.{}percentile {} {}",    scenarioName, (int) (percentile999 * 1000), realPercentile999, timestamp);
                 LOG.info("test.ovonick.metricsedgecases.{}.metrics.count {} {}",        scenarioName, (int) (timer.getCount()), timestamp);
                 LOG.info("test.ovonick.metricsedgecases.{}.metrics.oneminuterate {} {}",scenarioName, (int) (timer.getOneMinuteRate() * 60), timestamp); // timer always returns rate per second. Since we comparing rate per minute we multiply that by 60 which is not correct and thus to show that this is not the right way to get count per minute.
-                LOG.info("test.ovonick.metricsedgecases.{}.metrics.{}percentile {} {}", scenarioName, (int) (percentile * 100), (int) timer.getSnapshot().getValue(percentile) / scenarioScale, timestamp); // since timer returns nanoseconds we scale it to milliseconds for scenarios 1 and 2
+                LOG.info("test.ovonick.metricsedgecases.{}.metrics.{}percentile {} {}", scenarioName, (int) (percentile95  * 100),  (int) timer.getSnapshot().getValue(percentile95)  / scenarioScale, timestamp); // since timer returns nanoseconds we scale it to milliseconds for scenarios 1 and 2
+                LOG.info("test.ovonick.metricsedgecases.{}.metrics.{}percentile {} {}", scenarioName, (int) (percentile99  * 100),  (int) timer.getSnapshot().getValue(percentile99)  / scenarioScale, timestamp); // since timer returns nanoseconds we scale it to milliseconds for scenarios 1 and 2
+                LOG.info("test.ovonick.metricsedgecases.{}.metrics.{}percentile {} {}", scenarioName, (int) (percentile999 * 1000), (int) timer.getSnapshot().getValue(percentile999) / scenarioScale, timestamp); // since timer returns nanoseconds we scale it to milliseconds for scenarios 1 and 2
                 MetricsEdgeCases.initializeRealValuesTimeFrame();
             }
         }
