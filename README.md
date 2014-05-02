@@ -4,6 +4,8 @@ Upon code reviewing Metrics framework some of the implementation questions were 
 scenarios were developed to highlight problems. These might be bugs in the code, limitations of algorithms
 or just my misunderstandings and improper usages. It would be nice to get some answers from developers behind Metrics framework.
 
+(There is some discussion around this topic here https://groups.google.com/d/topic/metrics-user/o-U6LBQF_dU/discussion )
+
 **Implementation notes:**
 
 - In every scenario below there is a "scheduled reporter" that reports metrics in "Graphite" format every minute.
