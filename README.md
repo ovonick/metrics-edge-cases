@@ -64,21 +64,42 @@ backend system like graphite to properly display one minute rate.
 2. Reservoir sampling (which is the basis for Timer implementation) does not
 do a good job in terms of accuracy. It is distribution dependent and ~25% error margin
 for 95th percentile was observed on the sample set of values. Even greater error margin is observed for higher percentiles.
+99th percentile pushes through 30% error margin and 99.9th percentile is even worse with ~70% error. This is rather unfortunate since
+most Metrics users would want to be "aggressive" and resort to reporting higher percentile values just to find
+themselves at looking at the most inaccurate values.
 
 ### Simulation
 There is a precalculated set of 5000 values. They are being recorded as "Timer" values. This process repeats every minute
 recording the exact same set of values in the same sequence.
 
 ### Charts
-Timer.getOneMinuteRate() is not the same as count per minute. Timer.getOneMinuteRate() reports ~4200 counts per minute vs 5000 real count.
-This initial spike to ~33000 a minute rate (went through the roof) makes little sense either. Timer.getCount() matches real count though!
+Timer.getOneMinuteRate() is not the same as count per minute. Timer.getOneMinuteRate() reports ~3100 counts per minute vs 5000 real count.
+This initial spike to ~26000 a minute rate (went through the roof) makes little sense either. Timer.getCount() matches real count though!
 
 ![scenario3-count.png](output/images/scenario3-count.png)
 
-Reservoir sampling response time vs real response time
+Reservoir sampling response time vs real response time.
+
+95th percentile
 
 ![scenario3-95thpercentile.png](output/images/scenario3-95thpercentile.png)
+
+99th percentile
+
+![scenario3-99thpercentile.png](output/images/scenario3-99thpercentile.png)
+
+99.9th percentile
+
+![scenario3-999thpercentile.png](output/images/scenario3-999thpercentile.png)
 
 Reservoir sampling can be quite inaccurate. Up to 25% error margin on 95th percentile
 
 ![scenario3-error-95thpercentile.png](output/images/scenario3-error-95thpercentile.png)
+
+99th percentile breaks 30% error.
+
+![scenario3-error-99thpercentile.png](output/images/scenario3-error-99thpercentile.png)
+
+99.9th percentile is unfortunately effectively useless with 75% error
+
+![scenario3-error-999thpercentile.png](output/images/scenario3-error-999thpercentile.png)
